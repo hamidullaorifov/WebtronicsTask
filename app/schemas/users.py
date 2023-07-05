@@ -29,9 +29,9 @@ class UserDetails(BaseModel):
     username: str
     first_name: str
     last_name: str
-
-    class Config():
-        orm_mode = True
     posts: List[Post] = []
     liked_posts: List[Post] = []
     disliked_posts: List[Post] = []
+    class Config():
+        orm_mode = True
+    

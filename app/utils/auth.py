@@ -35,7 +35,7 @@ def authenticate_user(username: str, password: str):
 
 
 def verify_password(plain_password,hashed_password):
-    return pwd_context(plain_password,hashed_password)
+    return pwd_context.verify(plain_password,hashed_password)
 
 
 
