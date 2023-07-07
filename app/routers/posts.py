@@ -2,11 +2,11 @@ from fastapi import APIRouter,Depends,status,HTTPException
 from sqlalchemy.orm import Session
 from database.db_setup import get_db
 from app.utils.auth import get_current_user
-from fastapi.security import OAuth2PasswordBearer
+from app.utils.crud import create_user_reaction
 from app.models.users import User
-from app.models.posts import Post
+from app.models.posts import Post,user_ractions_table
 from app.schemas.posts import PostIn,PostOut
-from typing import Optional,Annotated,List
+from typing import List
 router = APIRouter(prefix='/posts',tags=['Post'])
 
 @router.post('',response_model=PostOut, status_code=status.HTTP_201_CREATED)
@@ -17,9 +17,13 @@ async def create_post(
     ):
     
     post = Post(content=request.content,owner_id=current_user.id)
-    db.add(post)
-    db.commit()
-    db.refresh(post)
+    try:
+        db.add(post)
+        db.commit()
+        db.refresh(post)
+    except:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Database error")
     return post
     
 
@@ -32,7 +36,7 @@ async def get_all_posts(db: Session = Depends(get_db)):
 @router.get('/{id}',response_model=PostOut)
 async def get_post(id:int,db: Session = Depends(get_db)):
     post = db.query(Post).filter(Post.id==id).first()
-
+    print(post.likes)
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail='Post not found')
     return post
@@ -45,6 +49,7 @@ async def update_post(
     current_user: User = Depends(get_current_user)
     ):
     post = db.query(Post).filter(Post.id==id).first()
+    
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail='Post not found')
 
@@ -82,4 +87,44 @@ async def delete_post(
         db.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Database error")
     return {"message":"Post deleted"}
+
+
+@router.post('/{id}/like')
+async def post_like(
+    id:int,
+    db:Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)):
+
+    post = db.query(Post).filter(Post.id==id).first()
+    
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail='Post not found')
+
+    if post.owner_id == current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="You cannot react your own posts")
+    
+    success = create_user_reaction(db=db,post_id=post.id,user_id=current_user.id,is_like=True)
+    if success:
+        return {"message":"You liked this post"}
+    else:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+@router.post('/{id}/dislike')
+async def post_dislike(
+    id:int,
+    db:Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)):
+
+    post = db.query(Post).filter(Post.id==id).first()
+ 
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail='Post not found')
+
+    if post.owner_id == current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="You cannot react your own posts")
+    
+    success = create_user_reaction(db=db,post_id=post.id,user_id=current_user.id,is_like=False)
+    if success:
+        return {"message":"You disliked this post"}
+    else:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

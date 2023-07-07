@@ -2,6 +2,7 @@ from sqlalchemy import Column,Integer,String,ForeignKey,DateTime,Boolean,Table
 from database.db_setup import Base
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
+from database.db_setup import get_db
 
 user_ractions_table = Table(
     'user_reactions',
@@ -23,3 +24,14 @@ class Post(Base):
 
     reacting_users = relationship('User',secondary=user_ractions_table,back_populates='reacted_posts')
 
+
+    @property
+    def likes(self):
+        db = next(get_db())
+        return db.query(user_ractions_table).filter_by(is_like=True,post_id=self.id).count()
+    
+    @property
+    def dislikes(self):
+        db = next(get_db())
+        return db.query(user_ractions_table).filter_by(is_like=False,post_id=self.id).count()
+        
