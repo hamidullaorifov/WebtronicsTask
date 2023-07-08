@@ -5,6 +5,7 @@ from jose import JWTError, jwt,ExpiredSignatureError
 from datetime import datetime,timedelta
 from app.models.users import User
 from database.db_setup import get_db
+import requests
 import config
 
 SECRET_KEY = config.SECRET_KEY  
@@ -15,7 +16,41 @@ ACCESS_TOKEN_EXPIRE_MINUTES = config.ACCESS_TOKEN_EXPIRE_MINUTES
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+
+def verify_email(email:str):
+    response = requests.get(
+        url=config.EMAIL_HUNTER_API_ROOT,
+        params={
+            "email":email,
+            "api_key":config.EMAIL_HUNTER_API_KEY
+            }
+        )
+
+    result = {"valid":True,"message":""}
+    if response.ok:
+        response_data = response.json()
+
+        data = response_data.get("data")
+        email_status = data.get("status")
+
+        if email_status == "invalid" or email_status == "disposable":
+            result["valid"] = False
+            result["message"] = email_status
+            return result
+
+        if data.get("disposable"):
+            result["valid"] = False
+            result["message"] ="disposable"
+        return result
+
+    elif response.status_code == 400:
+        result["valid"] = False
+        result["message"] = "invalid"
+
+    else:
+        raise HTTPException(status_code=response.status_code)
 
 
 

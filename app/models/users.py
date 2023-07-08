@@ -9,8 +9,9 @@ class User(Base):
     
     id = Column(Integer,primary_key=True,index=True)
     username = Column(String,index=True,nullable=False,unique=True)
-    first_name = Column(String,nullable=False)
-    last_name = Column(String,nullable=False)
+    email = Column(String,unique=True,nullable=False)
+    first_name = Column(String,nullable=True)
+    last_name = Column(String,nullable=True)
     password = Column(String(100),nullable=False)
 
     posts = relationship('Post',backref='owner')
