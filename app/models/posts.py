@@ -3,7 +3,9 @@ from database.db_setup import Base
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from database.db_setup import get_db
+from app.utils.cache import set_likes,set_dislikes,get_likes,get_dislikes
 
+import main
 user_ractions_table = Table(
     'user_reactions',
     Base.metadata,
@@ -27,11 +29,21 @@ class Post(Base):
 
     @property
     def likes(self):
-        db = next(get_db())
-        return db.query(user_ractions_table).filter_by(is_like=True,post_id=self.id).count()
+        likes_count = get_likes(self.id)
+        if not likes_count:
+            db = next(get_db())
+            likes_count = db.query(user_ractions_table).filter_by(is_like=True,post_id=self.id).count()
+            set_likes(self.id,likes_count)
+
+        return likes_count 
     
     @property
     def dislikes(self):
-        db = next(get_db())
-        return db.query(user_ractions_table).filter_by(is_like=False,post_id=self.id).count()
-        
+        dislikes_count = get_dislikes(self.id)
+        if not dislikes_count:
+            db = next(get_db())
+            dislikes_count = db.query(user_ractions_table).filter_by(is_like=False,post_id=self.id).count()
+            set_dislikes(self.id,dislikes_count)
+
+        return dislikes_count 
+

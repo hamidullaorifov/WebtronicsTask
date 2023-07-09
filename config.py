@@ -6,7 +6,7 @@ load_dotenv()
 
 
 DATABASE_URL = "sqlite:///./sql_app.db"
-
+REDIS_HOST = os.getenv('REDIS_HOST')
 SECRET_KEY = os.getenv('SECRET_KEY')  
 ALGORITHM = os.getenv('ALGORITHM')
 try:
@@ -15,7 +15,6 @@ except:
     ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 
-CLEARBIT_KEY = 'pk_f17d9626bd99938c6b742a3108a0de96'
 
 
 EMAIL_HUNTER_API_KEY = '2f41980b39075899a766a53490a733cd505bca78'

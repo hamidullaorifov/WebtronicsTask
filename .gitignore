@@ -47,3 +47,6 @@ libs/
 *.db-shm
 *.db-wal
 *.sql
+
+# Utils
+generate.py
