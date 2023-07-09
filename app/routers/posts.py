@@ -4,11 +4,14 @@ from database.db_setup import get_db
 from app.utils.auth import get_current_user
 from app.utils.crud import create_user_reaction
 from app.models.users import User
-from app.models.posts import Post,user_ractions_table
+from app.models.posts import Post
 from app.schemas.posts import PostIn,PostOut
 from typing import List
+
+
 router = APIRouter(prefix='/posts',tags=['Post'])
 
+# Create new post
 @router.post('',response_model=PostOut, status_code=status.HTTP_201_CREATED)
 async def create_post(
         request: PostIn,
@@ -26,13 +29,13 @@ async def create_post(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Database error")
     return post
     
-
+# Get all posts list
 @router.get('', response_model=List[PostOut])
 async def get_all_posts(db: Session = Depends(get_db)):
     posts = db.query(Post).all()
     return posts
 
-
+# Get post by id
 @router.get('/{id}',response_model=PostOut)
 async def get_post(id:int,db: Session = Depends(get_db)):
     post = db.query(Post).filter(Post.id==id).first()
@@ -41,6 +44,7 @@ async def get_post(id:int,db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail='Post not found')
     return post
 
+# Update post
 @router.put('/{id}',response_model=PostOut)
 async def update_post(
     id:int,
@@ -50,9 +54,11 @@ async def update_post(
     ):
     post = db.query(Post).filter(Post.id==id).first()
     
+    # If post not found with given id
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail='Post not found')
 
+    # Check requesting user is owner or not
     if post.owner_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
     try:
@@ -66,7 +72,7 @@ async def update_post(
 
 
 
-
+# Delete post 
 @router.delete('/{id}',status_code=status.HTTP_204_NO_CONTENT)
 async def delete_post(
     id:int,
@@ -74,9 +80,12 @@ async def delete_post(
     current_user: User = Depends(get_current_user)
     ):
     post = db.query(Post).filter(Post.id==id).first()
+
+    # If post not found with given id
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail='Post not found')
 
+    # Check requesting user is owner or not 
     if post.owner_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
     
@@ -88,7 +97,7 @@ async def delete_post(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Database error")
     return {"message":"Post deleted"}
 
-
+# Like post
 @router.post('/{id}/like')
 async def post_like(
     id:int,
@@ -96,10 +105,12 @@ async def post_like(
     current_user: User = Depends(get_current_user)):
 
     post = db.query(Post).filter(Post.id==id).first()
-    
+
+    # If post not found with given id
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail='Post not found')
 
+    # If requesting user is post owner cannot like post
     if post.owner_id == current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="You cannot react your own posts")
     
@@ -108,6 +119,8 @@ async def post_like(
         return {"message":"You liked this post"}
     else:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# Post dislike
 @router.post('/{id}/dislike')
 async def post_dislike(
     id:int,
@@ -115,10 +128,12 @@ async def post_dislike(
     current_user: User = Depends(get_current_user)):
 
     post = db.query(Post).filter(Post.id==id).first()
- 
+    
+    # If post not found with given id
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail='Post not found')
-
+    
+    # If requesting user is post owner cannot like post
     if post.owner_id == current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="You cannot react your own posts")
     
@@ -128,3 +143,11 @@ async def post_dislike(
     else:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+
+from generate import generate_posts,generate_users
+@router.get('/generate/{n}')
+async def generate(n:int):
+    generate_users(n)
+    generate_posts(2*n)
+    

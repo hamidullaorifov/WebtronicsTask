@@ -1,4 +1,4 @@
-from app.models.posts import Post,user_ractions_table
+from app.models.posts import Post,user_reactions_table
 from fastapi import HTTPException,status
 from sqlalchemy.orm import Session
 from app.utils.cache import update_likes,update_dislikes
@@ -7,11 +7,11 @@ def get_post_by_id(db, post_id):
 
 def create_user_reaction(db:Session,post_id,user_id,is_like):
     try:
-        query_result = db.query(user_ractions_table).filter_by(user_id=user_id,post_id=post_id)
+        query_result = db.query(user_reactions_table).filter_by(user_id=user_id,post_id=post_id)
 
         # Check user already reacted to post
         if query_result.count()==0:
-            reaction = user_ractions_table.insert().values(
+            reaction = user_reactions_table.insert().values(
                 is_like = is_like,
                 user_id = user_id,
                 post_id = post_id
@@ -20,12 +20,10 @@ def create_user_reaction(db:Session,post_id,user_id,is_like):
             db.commit()
             if is_like:
                 update_likes(post_id=post_id,incr=True)
-                print("updated by cache")
             else:
                 update_dislikes(post_id=post_id,incr=True)
-                print("updated by cache")
         else:
-            user_before_liked = query_result.filter_by(is_like=True).count()>0
+            user_before_liked = query_result.filter_by(is_like=True).count() > 0
 
             # If user before liked post and now dislike
             if user_before_liked and not is_like:
