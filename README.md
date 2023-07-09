@@ -34,6 +34,8 @@ This command will build the necessary images and start the containers in detache
 
 4. Once the containers are running, you can access the FastAPI application by opening your web browser and navigating to http://localhost:8000.
 
+5. Go to http://localhost:8000/docs to see Swagger documentation or go to http://localhost:8000/redoc to see Redoc
+
 ## API Endpoints
 
 This FastAPI application provides the following API endpoints:
