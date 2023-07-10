@@ -145,9 +145,5 @@ async def post_dislike(
 
 
 
-from generate import generate_posts,generate_users
-@router.get('/generate/{n}')
-async def generate(n:int):
-    generate_users(n)
-    generate_posts(2*n)
+
     
